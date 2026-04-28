@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Player, Doubling, Team, GameMode } from '@/lib/types';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
@@ -58,21 +58,52 @@ export function BanatDrawer({ open, onOpenChange, players, mode, teams, onConfir
             <span className={`text-xl font-bold ${isValid ? 'text-primary' : 'text-muted-foreground'}`}>{total} / 4</span>
           </div>
           
+          <p className="text-center text-xs text-muted-foreground -mt-2">
+            أي لاعب يمكن أن يأخذ بنات — بما فيهم من ضعّف.
+          </p>
           <div className="space-y-4">
-            {players.map(p => (
-              <div key={p.id} className="flex items-center justify-between p-3 bg-card border rounded-xl">
-                <span className="font-bold text-lg">{p.name}</span>
-                <div className="flex items-center gap-4">
-                  <Button variant="outline" size="icon" className="w-12 h-12 rounded-full" onClick={() => updateCount(p.id, 1)} disabled={total >= 4}>
-                    <Plus className="w-6 h-6" />
-                  </Button>
-                  <span className="text-2xl font-bold w-6 text-center">{counts[p.id] || 0}</span>
-                  <Button variant="outline" size="icon" className="w-12 h-12 rounded-full" onClick={() => updateCount(p.id, -1)} disabled={!counts[p.id]}>
-                    <Minus className="w-6 h-6" />
-                  </Button>
+            {players.map((p) => {
+              const isDoubler = doublings.some((d) => d.fromPlayerId === p.id);
+              const isDoubled = doublings.some((d) => d.toPlayerId === p.id);
+              return (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between p-3 bg-card border rounded-xl"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-lg">{p.name}</span>
+                    {(isDoubler || isDoubled) && (
+                      <Zap className="w-4 h-4 text-primary" />
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="w-12 h-12 rounded-full"
+                      onClick={() => updateCount(p.id, 1)}
+                      disabled={total >= 4}
+                      data-testid={`button-banat-plus-${p.id}`}
+                    >
+                      <Plus className="w-6 h-6" />
+                    </Button>
+                    <span className="text-2xl font-bold w-6 text-center">
+                      {counts[p.id] || 0}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="w-12 h-12 rounded-full"
+                      onClick={() => updateCount(p.id, -1)}
+                      disabled={!counts[p.id]}
+                      data-testid={`button-banat-minus-${p.id}`}
+                    >
+                      <Minus className="w-6 h-6" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
           <Button 

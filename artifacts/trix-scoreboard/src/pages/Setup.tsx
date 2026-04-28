@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
-import { Users, User, ArrowRight, Play } from 'lucide-react';
+import { Users, User, Play, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,53 +11,64 @@ import { AppHeader } from '@/components/AppHeader';
 export default function Setup() {
   const [, setLocation] = useLocation();
   const { dispatch } = useGame();
-  
+
   const [mode, setMode] = useState<'individual' | 'partnership'>('individual');
   const [players, setPlayers] = useState(['', '', '', '']);
   const [team1Name, setTeam1Name] = useState('الفريق الأول');
   const [team2Name, setTeam2Name] = useState('الفريق الثاني');
-  
+  const [firstKingIndex, setFirstKingIndex] = useState(0);
+
   const handlePlayerChange = (index: number, value: string) => {
     const newPlayers = [...players];
     newPlayers[index] = value;
     setPlayers(newPlayers);
   };
-  
-  const isFormValid = players.every(p => p.trim().length > 0) && 
-    (mode === 'individual' || (team1Name.trim().length > 0 && team2Name.trim().length > 0));
+
+  const namesValid = useMemo(() => players.every((p) => p.trim().length > 0), [players]);
+  const teamsValid = mode === 'individual' || (team1Name.trim().length > 0 && team2Name.trim().length > 0);
+  const isFormValid = namesValid && teamsValid;
+
+  // If a name is cleared, gracefully reset the chosen first king
+  useEffect(() => {
+    if (!players[firstKingIndex]?.trim()) setFirstKingIndex(0);
+  }, [players, firstKingIndex]);
 
   const handleStart = () => {
     if (!isFormValid) return;
-    
+
     const playerObjects = players.map((name, i) => ({
       id: `p${i + 1}`,
       name: name.trim(),
-      teamId: mode === 'partnership' ? (i < 2 ? 't1' : 't2') as 't1' | 't2' : undefined
+      teamId: mode === 'partnership' ? ((i < 2 ? 't1' : 't2') as 't1' | 't2') : undefined,
     }));
-    
-    const teams = mode === 'partnership' ? [
-      { id: 't1', name: team1Name.trim(), playerIds: ['p1', 'p2'] },
-      { id: 't2', name: team2Name.trim(), playerIds: ['p3', 'p4'] }
-    ] : undefined;
+
+    const teams =
+      mode === 'partnership'
+        ? [
+            { id: 't1', name: team1Name.trim(), playerIds: ['p1', 'p2'] },
+            { id: 't2', name: team2Name.trim(), playerIds: ['p3', 'p4'] },
+          ]
+        : undefined;
 
     dispatch({
       type: 'START_GAME',
       payload: {
         mode,
         players: playerObjects,
-        teams
-      }
+        teams,
+        firstKingId: playerObjects[firstKingIndex].id,
+      },
     });
-    
+
     setLocation('/game');
   };
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <AppHeader title="إعداد اللعبة" showBack backTo="/" />
-      
-      <main className="flex-1 p-6 max-w-md mx-auto w-full">
-        <motion.div 
+
+      <main className="flex-1 p-6 max-w-md mx-auto w-full pb-32">
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-8"
@@ -67,33 +78,35 @@ export default function Setup() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                  mode === 'individual' 
-                    ? 'border-primary bg-primary/10 text-primary' 
+                  mode === 'individual'
+                    ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-card text-muted-foreground hover:border-primary/50'
                 }`}
                 onClick={() => setMode('individual')}
+                data-testid="button-mode-individual"
               >
                 <User className="w-8 h-8 mb-2" />
                 <span className="font-bold">فردي</span>
               </button>
-              
+
               <button
                 className={`flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all ${
-                  mode === 'partnership' 
-                    ? 'border-primary bg-primary/10 text-primary' 
+                  mode === 'partnership'
+                    ? 'border-primary bg-primary/10 text-primary'
                     : 'border-border bg-card text-muted-foreground hover:border-primary/50'
                 }`}
                 onClick={() => setMode('partnership')}
+                data-testid="button-mode-partnership"
               >
                 <Users className="w-8 h-8 mb-2" />
                 <span className="font-bold">زوجي</span>
               </button>
             </div>
           </div>
-          
+
           <div className="space-y-4">
             <Label className="text-base text-muted-foreground">أسماء اللاعبين</Label>
-            
+
             {mode === 'individual' ? (
               <div className="space-y-3">
                 {players.map((p, i) => (
@@ -103,6 +116,7 @@ export default function Setup() {
                     value={p}
                     onChange={(e) => handlePlayerChange(i, e.target.value)}
                     className="h-12 text-lg bg-card"
+                    data-testid={`input-player-${i + 1}`}
                   />
                 ))}
               </div>
@@ -114,6 +128,7 @@ export default function Setup() {
                     onChange={(e) => setTeam1Name(e.target.value)}
                     className="h-12 text-lg font-bold border-none bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground"
                     placeholder="اسم الفريق الأول"
+                    data-testid="input-team-1"
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <Input
@@ -121,22 +136,25 @@ export default function Setup() {
                       value={players[0]}
                       onChange={(e) => handlePlayerChange(0, e.target.value)}
                       className="h-12 bg-background"
+                      data-testid="input-player-1"
                     />
                     <Input
                       placeholder="اللاعب 2"
                       value={players[1]}
                       onChange={(e) => handlePlayerChange(1, e.target.value)}
                       className="h-12 bg-background"
+                      data-testid="input-player-2"
                     />
                   </div>
                 </div>
-                
+
                 <div className="p-4 rounded-xl border border-border bg-card/50 space-y-3">
                   <Input
                     value={team2Name}
                     onChange={(e) => setTeam2Name(e.target.value)}
                     className="h-12 text-lg font-bold border-none bg-transparent px-0 focus-visible:ring-0 placeholder:text-muted-foreground"
                     placeholder="اسم الفريق الثاني"
+                    data-testid="input-team-2"
                   />
                   <div className="grid grid-cols-2 gap-2">
                     <Input
@@ -144,27 +162,69 @@ export default function Setup() {
                       value={players[2]}
                       onChange={(e) => handlePlayerChange(2, e.target.value)}
                       className="h-12 bg-background"
+                      data-testid="input-player-3"
                     />
                     <Input
                       placeholder="اللاعب 4"
                       value={players[3]}
                       onChange={(e) => handlePlayerChange(3, e.target.value)}
                       className="h-12 bg-background"
+                      data-testid="input-player-4"
                     />
                   </div>
                 </div>
               </div>
             )}
           </div>
+
+          {/* 7 of Hearts — first kingdom owner */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Heart className="w-5 h-5 text-primary fill-primary" />
+              <Label className="text-base text-muted-foreground">
+                من معه السبعة كوبا؟
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground -mt-1">
+              صاحب السبعة كوبا يفتح المملكة الأولى، ثم تدور على باقي اللاعبين بالترتيب.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {players.map((name, i) => {
+                const trimmed = name.trim();
+                const disabled = !trimmed;
+                const selected = firstKingIndex === i && !disabled;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => setFirstKingIndex(i)}
+                    data-testid={`button-first-king-${i + 1}`}
+                    className={`relative h-14 px-3 rounded-xl border-2 text-base font-bold transition-all flex items-center justify-center gap-2 ${
+                      disabled
+                        ? 'border-border/40 bg-card/30 text-muted-foreground/50 cursor-not-allowed'
+                        : selected
+                          ? 'border-primary bg-primary/10 text-primary shadow-[0_0_15px_rgba(201,169,97,0.15)]'
+                          : 'border-border bg-card text-foreground hover:border-primary/50'
+                    }`}
+                  >
+                    {selected && <Heart className="w-4 h-4 fill-primary text-primary" />}
+                    <span className="truncate">{trimmed || `اللاعب ${i + 1}`}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </motion.div>
       </main>
 
       <div className="p-6 sticky bottom-0 bg-background/80 backdrop-blur-sm border-t border-border">
-        <Button 
-          size="lg" 
-          className="w-full h-14 text-lg rounded-xl" 
+        <Button
+          size="lg"
+          className="w-full h-14 text-lg rounded-xl"
           disabled={!isFormValid}
           onClick={handleStart}
+          data-testid="button-start-game"
         >
           ابدأ اللعبة
           <Play className="mr-2 w-5 h-5" />

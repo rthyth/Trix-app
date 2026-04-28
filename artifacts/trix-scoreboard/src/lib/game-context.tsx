@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useReducer } from 'react';
-import { ContractResult, GameMode, GameState, Player, Team, Contract, Kingdom } from './types';
+import { ContractResult, GameState, Player, Kingdom, StartGamePayload, Action } from './types';
 import { loadCurrentGame, saveCurrentGame, addGameToHistory } from './storage';
 import { getPlayerTotalScore, getTeamTotalScore } from './scoring';
 
@@ -8,19 +8,21 @@ interface GameContextState {
   past: GameState[];
 }
 
-type Action =
-  | { type: 'START_GAME'; payload: Omit<GameState, 'id' | 'startDate' | 'kingdoms' | 'currentKingdomIndex' | 'isFinished'> }
-  | { type: 'APPLY_CONTRACT'; payload: ContractResult }
-  | { type: 'ADVANCE_KINGDOM' }
-  | { type: 'END_GAME' }
-  | { type: 'UNDO' }
-  | { type: 'LOAD_GAME'; payload: GameState }
-  | { type: 'QUIT_GAME' };
-
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-function initKingdoms(players: Player[]): Kingdom[] {
-  return players.map(p => ({
+// Order kingdoms starting from the chosen first king and rotate through the rest
+// in their original (table) order. This guarantees each player owns exactly one
+// kingdom and the next kingdom owner is always the next player at the table.
+function initKingdoms(players: Player[], firstKingId: string): Kingdom[] {
+  const startIdx = Math.max(
+    0,
+    players.findIndex((p) => p.id === firstKingId),
+  );
+  const ordered: Player[] = [];
+  for (let i = 0; i < players.length; i++) {
+    ordered.push(players[(startIdx + i) % players.length]);
+  }
+  return ordered.map((p) => ({
     kingId: p.id,
     completedContracts: [],
   }));
@@ -29,11 +31,14 @@ function initKingdoms(players: Player[]): Kingdom[] {
 function gameReducer(state: GameContextState, action: Action): GameContextState {
   switch (action.type) {
     case 'START_GAME': {
+      const payload = action.payload as StartGamePayload;
       const newGame: GameState = {
-        ...action.payload,
         id: generateId(),
         startDate: new Date().toISOString(),
-        kingdoms: initKingdoms(action.payload.players),
+        mode: payload.mode,
+        players: payload.players,
+        teams: payload.teams,
+        kingdoms: initKingdoms(payload.players, payload.firstKingId),
         currentKingdomIndex: 0,
         isFinished: false,
       };

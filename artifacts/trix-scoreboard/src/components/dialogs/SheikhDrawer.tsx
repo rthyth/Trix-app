@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { Player, Doubling, Team, GameMode, Contract } from '@/lib/types';
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter, DrawerClose } from '@/components/ui/drawer';
+import { useState } from 'react';
+import { Player, Doubling, Team, GameMode } from '@/lib/types';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer';
 import { Button } from '@/components/ui/button';
 import { DoublingDrawer } from './DoublingDrawer';
-import { computeBanatDoublings, computeSheikhDoublings, MULTIPLIERS } from '@/lib/scoring';
+import { computeSheikhDoublings, MULTIPLIERS } from '@/lib/scoring';
 import { Zap } from 'lucide-react';
 
 interface SheikhDrawerProps {
@@ -42,17 +42,34 @@ export function SheikhDrawer({ open, onOpenChange, players, mode, teams, onConfi
         </DrawerHeader>
         <div className="p-4 space-y-6">
           <p className="text-center text-muted-foreground">من أخذ الكبة (الشيخ)؟</p>
+          <p className="text-center text-xs text-muted-foreground -mt-3">
+            يمكن لأي لاعب أن يأخذها — حتى من ضعّف.
+          </p>
           <div className="grid grid-cols-2 gap-3">
-            {players.map(p => (
-              <Button
-                key={p.id}
-                variant={selectedPlayerId === p.id ? 'default' : 'outline'}
-                className={`h-16 text-lg ${selectedPlayerId === p.id ? 'bg-primary text-primary-foreground' : ''}`}
-                onClick={() => setSelectedPlayerId(p.id)}
-              >
-                {p.name}
-              </Button>
-            ))}
+            {players.map((p) => {
+              const isDoubler = doublings.some((d) => d.fromPlayerId === p.id);
+              const isDoubled = doublings.some((d) => d.toPlayerId === p.id);
+              return (
+                <Button
+                  key={p.id}
+                  variant={selectedPlayerId === p.id ? 'default' : 'outline'}
+                  className={`relative h-16 text-lg ${
+                    selectedPlayerId === p.id ? 'bg-primary text-primary-foreground' : ''
+                  }`}
+                  onClick={() => setSelectedPlayerId(p.id)}
+                  data-testid={`button-sheikh-taker-${p.id}`}
+                >
+                  {(isDoubler || isDoubled) && (
+                    <Zap
+                      className={`absolute top-1.5 right-2 w-3.5 h-3.5 ${
+                        selectedPlayerId === p.id ? 'text-primary-foreground' : 'text-primary'
+                      }`}
+                    />
+                  )}
+                  {p.name}
+                </Button>
+              );
+            })}
           </div>
           
           <Button 

@@ -49,8 +49,15 @@ export interface GameState {
   isFinished: boolean;
 }
 
+export interface StartGamePayload {
+  mode: GameMode;
+  players: Player[];
+  teams?: Team[];
+  firstKingId: string; // playerId who holds the 7 of Hearts and opens the first kingdom
+}
+
 export type Action =
-  | { type: 'START_GAME'; payload: Omit<GameState, 'id' | 'startDate' | 'kingdoms' | 'currentKingdomIndex' | 'isFinished'> }
+  | { type: 'START_GAME'; payload: StartGamePayload }
   | { type: 'APPLY_CONTRACT'; payload: ContractResult }
   | { type: 'ADVANCE_KINGDOM' }
   | { type: 'END_GAME' }
