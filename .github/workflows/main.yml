@@ -1,5 +1,5 @@
-name: Build_My_Trix_APK
-on: [push]
+name: Build_Trix_APK
+on: [push, workflow_dispatch]
 
 jobs:
   build:
@@ -9,7 +9,8 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build APK
-        uses: pavi2410/web-to-apk-action@main
+        uses: richardsauceda/pwa-to-apk@v1.1
         with:
-          title: "Trix Scoreboard"
-          url: "https://trix-kingdom-score-almlthb6776.replit.app/"
+          package-name: "com.trix.scoreboard"
+          app-name: "Trix Scoreboard"
+          web-url: "https://trix-kingdom-score--almlthb6776.replit.app/"
