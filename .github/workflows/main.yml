@@ -6,10 +6,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Build APK
-        uses: pavi2410/web-to-apk-action@v1
+        uses: pavi2410/web-to-apk-action@main
         with:
-          title: "تركس - Trix"
+          title: "Trix Scoreboard"
           url: "https://trix-kingdom-score-almlthb6776.replit.app/"
