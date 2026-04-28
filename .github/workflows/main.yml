@@ -1,0 +1,15 @@
+name: Build_My_Trix_APK
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Build APK
+        uses: pavi2410/web-to-apk-action@v1
+        with:
+          title: "تركس - Trix"
+          url: "https://trix-kingdom-score-almlthb6776.replit.app/"
