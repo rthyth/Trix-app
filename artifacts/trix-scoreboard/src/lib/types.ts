@@ -20,10 +20,17 @@ export enum Contract {
   TRIX = 'trix'
 }
 
+// A doubling = "the holder of a card declares it doubled before play".
+// - For SHEIKH: doublerId = the player who held the King and chose to double.
+//   takerId = the player who ended up taking the King.
+//   At most ONE doubling per Sheikh round.
+// - For BANAT: each entry represents ONE specific doubled queen.
+//   doublerId = the player who held that queen and doubled it.
+//   takerId = the player who ended up taking that queen.
+//   Up to FOUR doublings per Banat round (one per queen).
 export interface Doubling {
-  fromPlayerId: string; // X doubled Y
-  toPlayerId: string;   // Y
-  redoubled: boolean;   // if true, multiplier is 4, else 2
+  doublerId: string;
+  takerId: string;
 }
 
 export interface ContractResult {

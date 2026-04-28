@@ -3,7 +3,7 @@ import { useGame } from '@/lib/game-context';
 import { AppHeader } from '@/components/AppHeader';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
-import { Trophy, RotateCcw, Crown, Heart, Diamond, Layers, Check } from 'lucide-react';
+import { Trophy, RotateCcw, Crown, Heart, Diamond, Layers, Check, Zap } from 'lucide-react';
 import { getPlayerTotalScore, getTeamTotalScore } from '@/lib/scoring';
 import { Contract, type Doubling } from '@/lib/types';
 import { SheikhDrawer } from '@/components/dialogs/SheikhDrawer';
@@ -157,15 +157,24 @@ export default function Game() {
           <h3 className="text-sm font-bold text-muted-foreground px-1">الكونترات</h3>
           <div className="grid grid-cols-2 gap-3">
              {Object.values(Contract).map(c => {
-               const isCompleted = completedContracts.includes(c);
+               const completed = currentKingdom.completedContracts.find(cr => cr.contract === c);
+               const isCompleted = !!completed;
+               const wasDoubled = !!completed?.doublings && completed.doublings.length > 0;
                return (
                  <Button
                    key={c}
                    variant={isCompleted ? 'secondary' : 'outline'}
-                   className={`h-24 flex flex-col gap-2 rounded-2xl border-2 transition-all ${isCompleted ? 'opacity-50 grayscale bg-muted/50 border-transparent' : 'border-primary/20 hover:border-primary/50 hover:bg-primary/5'}`}
+                   className={`relative h-24 flex flex-col gap-2 rounded-2xl border-2 transition-all ${isCompleted ? 'opacity-50 grayscale bg-muted/50 border-transparent' : 'border-primary/20 hover:border-primary/50 hover:bg-primary/5'}`}
                    disabled={isCompleted}
                    onClick={() => setActiveDialog(c)}
+                   data-testid={`button-contract-${c}`}
                  >
+                   {wasDoubled && (
+                     <span className="absolute top-1.5 right-2 inline-flex items-center gap-0.5 text-[10px] font-bold bg-primary/20 text-primary px-1.5 py-0.5 rounded-full">
+                       <Zap className="w-2.5 h-2.5 fill-primary" />
+                       ×٢
+                     </span>
+                   )}
                    {isCompleted ? <Check className="w-8 h-8 text-muted-foreground" /> : getContractIcon(c)}
                    <span className="font-bold text-lg">{getContractName(c)}</span>
                  </Button>
@@ -180,8 +189,6 @@ export default function Game() {
         open={activeDialog === Contract.SHEIKH} 
         onOpenChange={(open) => !open && setActiveDialog(null)}
         players={game.players}
-        mode={game.mode}
-        teams={game.teams}
         onConfirm={(s, d, ds) => applyContract(Contract.SHEIKH, s, d, ds)}
       />
       
@@ -189,8 +196,6 @@ export default function Game() {
         open={activeDialog === Contract.BANAT} 
         onOpenChange={(open) => !open && setActiveDialog(null)}
         players={game.players}
-        mode={game.mode}
-        teams={game.teams}
         onConfirm={(s, d, ds) => applyContract(Contract.BANAT, s, d, ds)}
       />
 
