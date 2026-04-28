@@ -9,7 +9,8 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build APK
-        uses: simple-pwa/pwa-to-apk@v1
+        uses: richardsauceda/pwa-to-apk@v1.1
         with:
-          url: "https://trix-kingdom-score--almlthb6776.replit.app"
-          name: "Trix Score"
+          package-name: "com.trix.scoreboard"
+          app-name: "Trix Scoreboard"
+          web-url: "https://trix-kingdom-score--almlthb6776.replit.app"
