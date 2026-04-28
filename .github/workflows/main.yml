@@ -11,5 +11,5 @@ jobs:
       - name: Build APK
         uses: simple-pwa/pwa-to-apk@v1
         with:
-          url: "https://trix-kingdom-score--almlthb6776.replit.app/"
+          url: "https://trix-kingdom-score--almlthb6776.replit.app"
           name: "Trix Score"
